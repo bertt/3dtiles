@@ -16,8 +16,10 @@ namespace Cmpt.Tile
             var stream = new MemoryStream();
             var binaryWriter = new BinaryWriter(stream);
 
-            var header = new CmptHeader();
-            header.TilesLength = tiles.Count();
+            var header = new CmptHeader
+            {
+                TilesLength = tiles.Count()
+            };
 
             var paddedTiles = new List<byte[]>();
             foreach (var tile in tiles)
