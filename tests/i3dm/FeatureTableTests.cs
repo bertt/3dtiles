@@ -47,12 +47,16 @@ namespace i3dm.tile.tests
         public void DeserializeFeatureTableToJsonTest()
         {
             // arrange
-            var positions = new List<Vector3>();
-            positions.Add(new Vector3(0, 0, 0));
-            positions.Add(new Vector3(1, 1, 1));
+            var positions = new List<Vector3>
+            {
+                new Vector3(0, 0, 0),
+                new Vector3(1, 1, 1)
+            };
             var treeGlb = File.ReadAllBytes(@"fixtures/barrel.glb");
-            var i3dm = new I3dm.Tile.I3dm(positions, treeGlb);
-            i3dm.Positions = positions;
+            var i3dm = new I3dm.Tile.I3dm(positions, treeGlb)
+            {
+                Positions = positions
+            };
 
             // act
             var featureTableJson = i3dm.GetFeatureTableJson();

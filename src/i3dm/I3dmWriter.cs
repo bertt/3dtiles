@@ -49,7 +49,7 @@ namespace I3dm.Tile
 
         private static void UpdateProperties(I3dm i3dm, string batchIdSerializeType)
         {
-            var batchIdBytes = new byte[0];
+            var batchIdBytes = Array.Empty<byte>();
             if (i3dm.BatchIds != null)
             {
                 batchIdBytes = GetBatchIdsBytes(i3dm.BatchIds, batchIdSerializeType);
