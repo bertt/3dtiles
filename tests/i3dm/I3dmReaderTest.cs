@@ -1,0 +1,215 @@
+using I3dm.Tile;
+using NUnit.Framework;
+using SharpGLTF.Validation;
+using System.IO;
+using System.Numerics;
+
+namespace i3dm.tile.tests
+{
+    public class Tests
+    {
+        string expectedMagicHeader = "i3dm";
+        int expectedVersionHeader = 1;
+
+
+        [Test]
+        public void ReadInstancedRTCTest()
+        {
+            // arrange
+            var i3dmfile = File.OpenRead(@"fixtures/instancedRTC.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+
+            var i3dm = I3dmReader.Read(i3dmfile);
+
+            Assert.IsNotNull(i3dm);
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":25,\"RTC_CENTER\":[1215013.8340490046,-4736316.75897742,4081608.4380407534],\"EAST_NORTH_UP\":true,\"POSITION\":{\"byteOffset\":0}} ");
+            Assert.IsTrue(i3dm.Positions[0] == new Vector3(-64.70168f, -69.73304f, -61.245365f));
+        }
+
+        [Test]
+        public void InstancedAnimatedTest()
+        {
+            // arrange
+            var i3dmfile = File.OpenRead(@"fixtures/instancedAnimated.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+
+            // act
+            var i3dm = I3dmReader.Read(i3dmfile);
+            Assert.IsTrue(expectedMagicHeader == i3dm.I3dmHeader.Magic);
+            Assert.IsTrue(expectedVersionHeader == i3dm.I3dmHeader.Version);
+            Assert.IsTrue(i3dm.I3dmHeader.GltfFormat == 1);
+            Assert.IsTrue(i3dm.BatchTableJson.Length >= 0);
+            Assert.IsTrue(i3dm.GlbData.Length > 0);
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":25,\"EAST_NORTH_UP\":true,\"POSITION\":{\"byteOffset\":0}}");
+            Assert.IsTrue(i3dm.FeatureTable.InstancesLength == 25);
+            var stream = new MemoryStream(i3dm.GlbData);
+            var glb = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream);
+            Assert.IsTrue(glb.LogicalAnimations.Count == 1);
+            Assert.IsTrue(glb.LogicalAnimations[0].Name == "Object_0Action");
+        }
+
+        [Test]
+        public void InstancedTexturedTest()
+        {
+            // arrange
+            // source: https://github.com/flywave/go-3dtile/tree/master/data/Textured/instancedTextured.i3dm
+            var i3dmfile = File.OpenRead(@"fixtures/instancedTextured.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+            // act
+            var i3dm = I3dmReader.Read(i3dmfile);
+            Assert.IsTrue(expectedMagicHeader == i3dm.I3dmHeader.Magic);
+            Assert.IsTrue(expectedVersionHeader == i3dm.I3dmHeader.Version);
+            Assert.IsTrue(i3dm.I3dmHeader.GltfFormat == 1);
+            Assert.IsTrue(i3dm.BatchTableJson.Length >= 0);
+            Assert.IsTrue(i3dm.GlbData.Length > 0);
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":1,\"POSITION\":{\"byteOffset\":0}}  ");
+            Assert.IsTrue(i3dm.FeatureTable.InstancesLength == 1);
+            var stream = new MemoryStream(i3dm.GlbData);
+            try
+            {
+                var glb = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream);
+            }
+            catch (SchemaException le)
+            {
+                // we expect schemaexception because no support for gltf1'
+                Assert.IsTrue(le != null);
+                Assert.IsTrue(le.Message == "Unknown version number: 1");
+            }
+        }
+
+        [Test]
+        public void InstancedBarrelTest()
+        {
+            // arrange
+            // source: https://github.com/PrincessGod/objTo3d-tiles/blob/master/bin/barrel/output/Instancedbarrel/barrel.i3dm
+            var i3dmfile = File.OpenRead(@"fixtures/barrel.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+            // act
+            var i3dm = I3dmReader.Read(i3dmfile);
+            Assert.IsTrue(expectedMagicHeader == i3dm.I3dmHeader.Magic);
+            Assert.IsTrue(expectedVersionHeader == i3dm.I3dmHeader.Version);
+
+            Assert.IsTrue(i3dm.I3dmHeader.FeatureTableBinaryByteLength == 496);
+            Assert.IsTrue(i3dm.I3dmHeader.GltfFormat == 1);
+            Assert.IsTrue(i3dm.BatchTableJson.Length >= 0);
+            Assert.IsTrue(i3dm.BatchTableJson == "{\"name\":[\"center\",\"right\",\"left\",\"top\",\"bottom\",\"up\",\"right-top\",\"right-bottom\",\"left-top\",\"left-bottom\"],\"id\":[0,1,2,3,4,5,6,7,8,9]}   ");
+            Assert.IsTrue(i3dm.GlbData.Length > 0);
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":10,\"POSITION\":{\"byteOffset\":0},\"BATCH_ID\":{\"byteOffset\":120,\"componentType\":\"UNSIGNED_BYTE\"},\"NORMAL_UP\":{\"byteOffset\":132},\"NORMAL_RIGHT\":{\"byteOffset\":252},\"SCALE_NON_UNIFORM\":{\"byteOffset\":372}}       ");
+            Assert.IsTrue(i3dm.FeatureTable.InstancesLength == 10);
+            Assert.IsTrue(i3dm.FeatureTable.BatchIdOffset.componentType== "UNSIGNED_BYTE");
+
+            Assert.IsTrue(i3dm.Positions[0].Equals(new Vector3(0, 0, 0)));
+            Assert.IsTrue(i3dm.Positions[1].Equals(new Vector3(20, 0, 0)));
+            Assert.IsTrue(i3dm.BatchIds[0]==0);
+            Assert.IsTrue(i3dm.BatchIds[1] == 1);
+            Assert.IsTrue(i3dm.BatchIds[2] == 2);
+            Assert.IsTrue(i3dm.BatchIds[9] == 9);
+
+            Assert.IsTrue(i3dm.FeatureTableBinary.Length == 496);
+            var stream = new MemoryStream(i3dm.GlbData);
+            var glb = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream);
+            glb.SaveGLB(@"barrel.glb");
+        }
+
+
+        [Test]
+        public void InstancedWithBatchTableTest()
+        {
+            // arrange
+            // source: http://vcities.umsl.edu/Cesium1.54/Apps/SampleData/Cesium3DTiles/Instanced/InstancedWithBatchTable/
+            var i3dmfile = File.OpenRead(@"fixtures/instancedWithBatchTable.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+            // act
+            var i3dm = I3dmReader.Read(i3dmfile);
+            Assert.IsTrue(expectedMagicHeader == i3dm.I3dmHeader.Magic);
+            Assert.IsTrue(expectedVersionHeader == i3dm.I3dmHeader.Version);
+            Assert.IsTrue(i3dm.I3dmHeader.GltfFormat == 1);
+            Assert.IsTrue(i3dm.BatchTableJson.Length >= 0);
+            Assert.IsTrue(i3dm.BatchTableJson == "{\"Height\":[20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20]} ");
+            Assert.IsTrue(i3dm.GlbData.Length > 0);
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":25,\"EAST_NORTH_UP\":true,\"POSITION\":{\"byteOffset\":0}}");
+            Assert.IsTrue(i3dm.FeatureTableBinary.Length == 304);
+            var stream = new MemoryStream(i3dm.GlbData);
+            var glb = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream);
+            glb.SaveGLB(@"instancedwithbatchtable.glb");
+        }
+
+        [Test]
+        public void InstancedOrientationTest()
+        {
+            // arrange
+            // source: http://vcities.umsl.edu/Cesium1.54/Apps/SampleData/Cesium3DTiles/Instanced/InstancedOrientation/
+            var i3dmfile = File.OpenRead(@"fixtures/instancedOrientation.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+            // act
+            var i3dm = I3dmReader.Read(i3dmfile);
+            Assert.IsTrue(expectedMagicHeader == i3dm.I3dmHeader.Magic);
+            Assert.IsTrue(expectedVersionHeader == i3dm.I3dmHeader.Version);
+            Assert.IsTrue(i3dm.I3dmHeader.GltfFormat == 1);
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":25,\"POSITION\":{\"byteOffset\":0},\"NORMAL_UP\":{\"byteOffset\":300},\"NORMAL_RIGHT\":{\"byteOffset\":600}}    ");
+            Assert.IsTrue(i3dm.BatchTableJson.Length >= 0);
+            Assert.IsTrue(i3dm.GlbData.Length > 0);
+            Assert.IsTrue(i3dm.BatchTableJson == "{\"Height\":[20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20]} ");
+            Assert.IsTrue(i3dm.FeatureTableBinary.Length == 904);
+            var stream = new MemoryStream(i3dm.GlbData);
+            var glb = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream);
+            Assert.IsTrue(glb != null);
+            glb.SaveGLB(@"instancedorientation.glb");
+        }
+
+        [Test]
+        public void TreeBillboardTest()
+        {
+            // arrange
+            var i3dmfile = File.OpenRead(@"fixtures/tree_billboard.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+            // act
+            var i3dm = I3dmReader.Read(i3dmfile);
+            Assert.IsTrue(expectedMagicHeader == i3dm.I3dmHeader.Magic);
+            Assert.IsTrue(expectedVersionHeader == i3dm.I3dmHeader.Version);
+            Assert.IsTrue(i3dm.I3dmHeader.GltfFormat == 1);
+            Assert.IsTrue(i3dm.BatchTableJson.Length >= 0);
+            Assert.IsTrue(i3dm.GlbData.Length > 0);
+            Assert.IsTrue(i3dm.FeatureTableBinary.Length == 304);
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":25,\"EAST_NORTH_UP\":true,\"POSITION\":{\"byteOffset\":0}}");
+            Assert.IsTrue(i3dm.BatchTableJson == "{\"Height\":[20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20]} ");
+            Assert.IsTrue(i3dm.FeatureTableBinary.Length == 304);
+            var stream = new MemoryStream(i3dm.GlbData);
+            try
+            {
+                var glb = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream);
+            }
+            catch (LinkException le)
+            {
+                // we expect linkexception because SharpGLTF does not support KHR_techniques_webgl'
+                Assert.IsTrue(le != null);
+                Assert.IsTrue(le.Message == "Extensions: KHR_techniques_webgl");
+            }
+        }
+
+        [Test]
+        public void TreeTest()
+        {
+            // arrange
+            var i3dmfile = File.OpenRead(@"fixtures/tree.i3dm");
+            Assert.IsTrue(i3dmfile != null);
+            // act
+            var i3dm = I3dmReader.Read(i3dmfile);
+            Assert.IsTrue(expectedMagicHeader == i3dm.I3dmHeader.Magic);
+            Assert.IsTrue(expectedVersionHeader == i3dm.I3dmHeader.Version);
+            Assert.IsTrue(i3dm.I3dmHeader.GltfFormat == 1);
+            Assert.IsTrue(i3dm.BatchTableJson.Length >= 0);
+            Assert.IsTrue(i3dm.GlbData.Length > 0);
+            Assert.IsTrue(i3dm.FeatureTableBinary.Length == 304);
+            Assert.IsTrue(i3dm.BatchTableJson == "{\"Height\":[20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20]} ");
+            Assert.IsTrue(i3dm.FeatureTableJson == "{\"INSTANCES_LENGTH\":25,\"EAST_NORTH_UP\":true,\"POSITION\":{\"byteOffset\":0}}");
+            Assert.IsTrue(i3dm.FeatureTableBinary.Length == 304);
+            Assert.IsTrue(i3dm.Positions[0].Equals(new Vector3(1214947.2f, -4736379f, 4081540.8f)));
+            var stream = new MemoryStream(i3dm.GlbData);
+            var glb = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream);
+            Assert.IsTrue(glb.Asset.Version.Major == 2.0);
+            Assert.IsTrue(glb.Asset.Generator == "COLLADA2GLTF");
+            glb.SaveGLB(@"tree.glb");
+        }
+    }
+}
