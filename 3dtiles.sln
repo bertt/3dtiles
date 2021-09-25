@@ -5,7 +5,12 @@ VisualStudioVersion = 16.0.31702.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "3dtiles", "src\3dtiles.csproj", "{E9AC8388-19EB-4F2D-9A3B-59FD03728306}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3dtiles.tests", "tests\3dtiles.tests.csproj", "{6F44298E-458C-4093-803B-0D159C19B10C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "3dtiles.tests", "tests\3dtiles.tests.csproj", "{6F44298E-458C-4093-803B-0D159C19B10C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{32CFDE07-B43F-4EB7-B742-B535E82E44DC}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

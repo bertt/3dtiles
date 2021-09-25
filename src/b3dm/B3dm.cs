@@ -12,8 +12,8 @@ namespace B3dm.Tile
             FeatureTableJson = string.Empty;
             BatchTableJson = string.Empty;
             FeatureTableJson = "{\"BATCH_LENGTH\":0}  ";
-            FeatureTableBinary = new byte[0];
-            BatchTableBinary = new byte[0];
+            FeatureTableBinary = System.Array.Empty<byte>();
+            BatchTableBinary = System.Array.Empty<byte>();
         }
 
         public B3dm(byte[] glb): this()
