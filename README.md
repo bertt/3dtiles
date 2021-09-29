@@ -9,3 +9,7 @@ Library for handling 3D Tiles
 . Points (pnts)
 
 . Composite (cmpt)
+
+todo:
+
+. Vector (vctr)
